@@ -126,8 +126,9 @@ extension AudioPlayerExtension on AudioPlayer {
         await dir.delete();
       }
       print('Cache cleared successfully.');
-    } catch (e) {
+    } catch (e, s) {
       print('Error clearing cache: $e');
+      print(s);
     }
   }
 
