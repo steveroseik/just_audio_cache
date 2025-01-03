@@ -105,10 +105,30 @@ extension AudioPlayerExtension on AudioPlayer {
     }
   }
 
-  /// Clear all the cache in the app dir
+  /// Clear all the cache in the app directory
   Future<void> clearCache({String? path}) async {
-    final dir = path != null ? Directory(path) : (await _openDir());
-    return dir.deleteSync();
+    try {
+      // Get the directory
+      final dir = path != null ? Directory(path) : (await _openDir());
+
+      // Check if the directory exists
+      if (await dir.exists()) {
+        // Delete all contents of the directory recursively
+        await for (var entity in dir.list(recursive: false)) {
+          if (entity is File) {
+            await entity.delete();
+          } else if (entity is Directory) {
+            await entity.delete(recursive: true);
+          }
+        }
+
+        // Delete the directory itself
+        await dir.delete();
+      }
+      print('Cache cleared successfully.');
+    } catch (e) {
+      print('Error clearing cache: $e');
+    }
   }
 
   Future<void> playFromFile({required String filePath}) async {
