@@ -18,9 +18,14 @@ extension AudioPlayerExtension on AudioPlayer {
 
   /// Get audio file cache path
   Future<String?> getCachedPath({required String url}) async {
-    if (_sp == null) _sp = await SharedPreferences.getInstance();
+    try {
+      if (_sp == null) _sp = await SharedPreferences.getInstance();
 
-    return _sp!.getString(getUrlSuffix(url));
+      return _sp!.getString(getUrlSuffix(url));
+    } catch (e, s) {
+      print(e);
+      print(s);
+    }
   }
 
   /// Get audio from local if exist, otherwise download from network
@@ -36,37 +41,43 @@ extension AudioPlayerExtension on AudioPlayer {
     bool excludeCallback(url)?,
     bool preload = true,
   }) async {
-    if (_sp == null) _sp = await SharedPreferences.getInstance();
+    try {
+      if (_sp == null) _sp = await SharedPreferences.getInstance();
 
-    if (excludeCallback != null) {
-      pushIfNotExisted = excludeCallback(url);
-    }
-
-    final dirPath = path ?? (await _openDir()).path;
-    // File check
-    if (await existedInLocal(url: url)) {
-      // existed, play from local file
-      final localPath = await _buildPath(url, path);
-      try {
-        return await setFilePath(localPath, preload: preload);
-      } catch (e) {
-        print(e);
+      if (excludeCallback != null) {
+        pushIfNotExisted = excludeCallback(url);
       }
-    }
 
-    final duration = await setUrl(url, preload: preload);
-
-    // download to cache after setUrl in order to show the audio buffer state
-    if (pushIfNotExisted) {
-      final localPath = await _buildPath(url, path);
-      IoClient.download(url: url, path: localPath).then((storedPath) {
-        if (storedPath != null) {
-          _sp!.setString(url, storedPath);
+      final dirPath = path ?? (await _openDir()).path;
+      // File check
+      if (await existedInLocal(url: url)) {
+        // existed, play from local file
+        final localPath = await _buildPath(url, path);
+        try {
+          return await setFilePath(localPath, preload: preload);
+        } catch (e, s) {
+          print(e);
+          print(s);
         }
-      });
-    }
+      }
 
-    return duration;
+      final duration = await setUrl(url, preload: preload);
+
+      // download to cache after setUrl in order to show the audio buffer state
+      if (pushIfNotExisted) {
+        final localPath = await _buildPath(url, path);
+        IoClient.download(url: url, path: localPath).then((storedPath) {
+          if (storedPath != null) {
+            _sp!.setString(url, storedPath);
+          }
+        });
+      }
+
+      return duration;
+    } catch (e, s) {
+      print(e);
+      print(s);
+    }
   }
 
   Future<String> _buildPath(String url, String? path) async {
